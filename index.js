@@ -55,14 +55,8 @@ app.delete('/api/persons/:id', (request, response, next) => {
       .catch(error => next(error))
 })
 
-app.post('/api/persons', (request, response) => {
+app.post('/api/persons', (request, response, next) => {
   const body = request.body
-
-  if (!body.name || !body.number) {
-    return response.status(400).json({ 
-      error: 'name or number is missing' 
-    })
-  }
 
   const person = new Person({
     name: body.name,
@@ -70,29 +64,11 @@ app.post('/api/persons', (request, response) => {
   })
 
   person.save()
-    .then(() => {
-      response.json(person)
+    .then((savedPerson) => {
+      response.json(savedPerson)
     })
-    .catch((error) => {
-      return response.status(400).json({ 
-        error: error.message
-      })
-    })
+    .catch(error => next(error))
 })
-
-// app.put('/api/notes/:id', (request, response, next) => {
-//   const body = request.body
-//   const note = {
-//     content: body.content,
-//     important: body.important,
-//   }
-//   Note.findByIdAndUpdate(request.params.id, note, { new: true })
-//     .then(updatedNote => {
-//       response.json(updatedNote)
-//     })
-//     .catch(error => next(error))
-// })
-
 
 app.put('/api/persons/:id', (request, response, next) => {
   const body = request.body
@@ -101,7 +77,11 @@ app.put('/api/persons/:id', (request, response, next) => {
     number: body.number,
   }
 
-  Person.findByIdAndUpdate(request.params.id, person, { new: true })
+  Person.findByIdAndUpdate(
+    request.params.id, 
+    person, 
+    { new: true, runValidators: true, context: 'query' }
+  )
     .then(updatedPerson => {
       response.json(updatedPerson)
     })
@@ -114,6 +94,10 @@ const errorHandler = (error, request, response, next) => {
 
   if (error.name === 'CastError') {
     return response.status(400).send({ error: 'malformatted id' })
+  } else if (error.name === 'ValidationError') {
+    return response.status(400).json({ error: error.message })
+  } else if (error.message.startsWith("E11000 duplicate key error collection:")) {
+    return response.status(400).send({ error: 'duplicated name' })
   }
 
   next(error)
