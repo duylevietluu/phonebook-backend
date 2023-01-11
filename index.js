@@ -6,13 +6,13 @@ const app = express()
 
 app.use(express.json())
 
-morgan.token('body', (request, response) => 
-  (request.method === 'POST') ?
-    JSON.stringify(request.body)
-    : ""
-)
+// morgan.token('body', (request, response) => 
+//   (request.method === 'POST') ?
+//     JSON.stringify(request.body)
+//     : ""
+// )
 
-app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'))
+// app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'))
 
 app.use(cors())
 app.use(express.static('build'))
