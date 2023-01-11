@@ -4,6 +4,9 @@ const cors = require('cors')
 // const morgan = require('morgan')
 const app = express()
 
+require('dotenv').config()
+const Person = require('./models/person')
+
 app.use(express.json())
 
 // morgan.token('body', (request, response) => 
@@ -11,7 +14,6 @@ app.use(express.json())
 //     JSON.stringify(request.body)
 //     : ""
 // )
-
 // app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'))
 
 app.use(cors())
@@ -48,7 +50,9 @@ app.get('/info', (request, response) => {
 })
 
 app.get('/api/persons', (request, response) => {
+  Person.find({}).then(persons => {
     response.json(persons)
+  })
 })
 
 app.get('/api/persons/:id', (request, response) => {
@@ -69,12 +73,6 @@ app.delete('/api/persons/:id', (request, response) => {
     response.status(204).end()
 })
 
-const generateId = () => {
-  const max = 1000000 // exclusive
-  // id 0->999999
-  return Math.floor(Math.random() * max);
-}
-
 app.post('/api/persons', (request, response) => {
   const body = request.body
 
@@ -84,20 +82,29 @@ app.post('/api/persons', (request, response) => {
     })
   }
 
-  if (persons.find(person => person.name === body.name)) {
-    return response.status(400).json({ 
-      error: 'name must be unique' 
-    })
-  }
+  // if (persons.find(person => person.name === body.name)) {
+  //   return response.status(400).json({ 
+  //     error: 'name must be unique' 
+  //   })
+  // }
 
-  const person = {
+  const person = new Person({
     name: body.name,
     number: body.number,
-    id: generateId(),
-  }
+  })
 
-  persons = persons.concat(person)
-  response.json(person)
+  // persons = persons.concat(person)
+  // response.json(person)
+
+  person.save()
+    .then(() => {
+      response.json(person)
+    })
+    .catch((error) => {
+      return response.status(400).json({ 
+        error: error.message
+      })
+    })
 })
 
 // set up
@@ -105,3 +112,5 @@ const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
+
+// flyctl.exe secrets set MONGODB_URI='mongodb+srv://duyle:fullstack@cluster0.i0cihys.mongodb.net/phoneBook?retryWrites=true&w=majority'
